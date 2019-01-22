@@ -3,7 +3,7 @@
 	url = git://git.bro.org/bro-aux
 [submodule "aux/binpac"]
 	path = aux/binpac
-	url = git://git.bro.org/binpac
+	url = git://www.github.com/HeliosData/binpac
 [submodule "aux/broccoli"]
 	path = aux/broccoli
 	url = git://git.bro.org/broccoli
