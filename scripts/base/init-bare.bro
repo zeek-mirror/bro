@@ -2113,226 +2113,380 @@ const RPC_status = {
 module NFS3;
 
 export {
-	## If true, :bro:see:`nfs_proc_read` and :bro:see:`nfs_proc_write`
-	## events return the file data that has been read/written.
-	##
-	## .. bro:see:: NFS3::return_data_max NFS3::return_data_first_only
-	const return_data = F &redef;
+    ## If true, :bro:see:`nfs_proc_read` and :bro:see:`nfs_proc_write`
+    ## events return the file data that has been read/written.
+    ##
+    ## .. bro:see:: NFS3::return_data_max NFS3::return_data_first_only
+    const return_data = F &redef;
 
-	## If :bro:id:`NFS3::return_data` is true, how much data should be
-	## returned at most.
-	const return_data_max = 512 &redef;
+    ## If :bro:id:`NFS3::return_data` is true, how much data should be
+    ## returned at most.
+    const return_data_max = 512 &redef;
 
-	## If :bro:id:`NFS3::return_data` is true, whether to *only* return data
-	## if the read or write offset is 0, i.e., only return data for the
-	## beginning of the file.
-	const return_data_first_only = T &redef;
+    ## If :bro:id:`NFS3::return_data` is true, whether to *only* return data
+    ## if the read or write offset is 0, i.e., only return data for the
+    ## beginning of the file.
+    const return_data_first_only = T &redef;
 
-	## Record summarizing the general results and status of NFSv3
-	## request/reply pairs.
-	##
-	## Note that when *rpc_stat* or *nfs_stat* indicates not successful,
-	## the reply record passed to the corresponding event will be empty and
-	## contain uninitialized fields, so don't use it. Also note that time
-	## and duration values might not be fully accurate. For TCP, we record
-	## times when the corresponding chunk of data is delivered to the
-	## analyzer. Depending on the reassembler, this might be well after the
-	## first packet of the request was received.
-	##
-	## .. bro:see:: nfs_proc_create nfs_proc_getattr nfs_proc_lookup
-	##    nfs_proc_mkdir nfs_proc_not_implemented nfs_proc_null
-	##    nfs_proc_read nfs_proc_readdir nfs_proc_readlink nfs_proc_remove
-	##    nfs_proc_rmdir nfs_proc_write nfs_reply_status
-	type info_t: record {
-		## The RPC status.
-		rpc_stat: rpc_status;
-		## The NFS status.
-		nfs_stat: status_t;
-		## The start time of the request.
-		req_start: time;
-		## The duration of the request.
-		req_dur: interval;
-		## The length in bytes of the request.
-		req_len: count;
-		## The start time of the reply.
-		rep_start: time;
-		## The duration of the reply.
-		rep_dur: interval;
-		## The length in bytes of the reply.
-		rep_len: count;
-	};
+    ## Record summarizing the general results and status of NFSv3
+    ## request/reply pairs.
+    ##
+    ## Note that when *rpc_stat* or *nfs_stat* indicates not successful,
+    ## the reply record passed to the corresponding event will be empty and
+    ## contain uninitialized fields, so don't use it. Also note that time
+    ## and duration values might not be fully accurate. For TCP, we record
+    ## times when the corresponding chunk of data is delivered to the
+    ## analyzer. Depending on the reassembler, this might be well after the
+    ## first packet of the request was received.
+    ##
+    ## .. bro:see:: nfs_proc_create nfs_proc_getattr nfs_proc_lookup
+    ##    nfs_proc_mkdir nfs_proc_not_implemented nfs_proc_null
+    ##    nfs_proc_read nfs_proc_readdir nfs_proc_readlink nfs_proc_remove
+    ##    nfs_proc_rmdir nfs_proc_write nfs_reply_status
+    type info_t: record {
+        ## The RPC status.
+        rpc_stat: rpc_status;
+        ## The NFS status.
+        nfs_stat: status_t;
+        ## The start time of the request.
+        req_start: time;
+        ## The duration of the request.
+        req_dur: interval;
+        ## The length in bytes of the request.
+        req_len: count;
+        ## The start time of the reply.
+        rep_start: time;
+        ## The duration of the reply.
+        rep_dur: interval;
+        ## The length in bytes of the reply.
+        rep_len: count;
+        ## The user id of the reply.
+        rpc_uid: count;
+        ## The group id of the reply.
+        rpc_gid: count;
+        ## The stamp of the reply.
+        rpc_stamp: count;
+        ## The machine name of the reply.
+        rpc_machine_name: string;
+        ## The auxiliary ids of the reply.
+        rpc_auxgids: index_vec;
+    };
 
-	## NFS file attributes. Field names are based on RFC 1813.
-	##
-	## .. bro:see:: nfs_proc_getattr
-	type fattr_t: record {
-		ftype: file_type_t;	##< File type.
-		mode: count;	##< Mode
-		nlink: count;	##< Number of links.
-		uid: count;	##< User ID.
-		gid: count;	##< Group ID.
-		size: count;	##< Size.
-		used: count;	##< TODO.
-		rdev1: count;	##< TODO.
-		rdev2: count;	##< TODO.
-		fsid: count;	##< TODO.
-		fileid: count;	##< TODO.
-		atime: time;	##< Time of last access.
-		mtime: time;	##< Time of last modification.
-		ctime: time;	##< Time of creation.
-	};
+    ## NFS file attributes. Field names are based on RFC 1813.
+    ##
+    ## .. bro:see:: nfs_proc_sattr
+    type sattr_t: record {
+        mode: count &optional; ##< Mode
+        uid: count  &optional; ##< User ID.
+        gid: count  &optional; ##< Group ID.
+        size: count &optional; ##< Size.
+        atime: time_how_t &optional; ##< Time of last access.
+        mtime: time_how_t &optional; ##< Time of last modification.
+    };
 
-	## NFS *readdir* arguments.
-	##
-	## .. bro:see:: nfs_proc_readdir
-	type diropargs_t : record {
-		dirfh: string;	##< The file handle of the directory.
-		fname: string;	##< The name of the file we are interested in.
-	};
+    ## NFS file attributes. Field names are based on RFC 1813.
+    ##
+    ## .. bro:see:: nfs_proc_getattr
+    type fattr_t: record {
+        ftype: file_type_t; ##< File type.
+        mode: count;    ##< Mode
+        nlink: count;   ##< Number of links.
+        uid: count; ##< User ID.
+        gid: count; ##< Group ID.
+        size: count;    ##< Size.
+        used: count;    ##< TODO.
+        rdev1: count;   ##< TODO.
+        rdev2: count;   ##< TODO.
+        fsid: count;    ##< TODO.
+        fileid: count;  ##< TODO.
+        atime: time;    ##< Time of last access.
+        mtime: time;    ##< Time of last modification.
+        ctime: time;    ##< Time of creation.
+    };
 
-	## NFS lookup reply. If the lookup failed, *dir_attr* may be set. If the
-	## lookup succeeded, *fh* is always set and *obj_attr* and *dir_attr*
-	## may be set.
-	##
-	## .. bro:see:: nfs_proc_lookup
-	type lookup_reply_t: record {
-		fh: string &optional;	##< File handle of object looked up.
-		obj_attr: fattr_t &optional;	##< Optional attributes associated w/ file
-		dir_attr: fattr_t &optional;	##< Optional attributes associated w/ dir.
-	};
+    ## NFS symlinkdata attributes. Field names are based on RFC 1813
+    ##
+    ## .. bro:see:: nfs_proc_symlink
+    type symlinkdata_t: record {
+        symlink_attributes: sattr_t; ##< The initial attributes for the symbolic link
+        nfspath: string &optional;  ##< The string containing the symbolic link data.
+    };
 
-	## NFS *read* arguments.
-	##
-	## .. bro:see:: nfs_proc_read
-	type readargs_t: record {
-		fh: string;	##< File handle to read from.
-		offset: count;	##< Offset in file.
-		size: count;	##< Number of bytes to read.
-	};
+    ## NFS *readdir* arguments.
+    ##
+    ## .. bro:see:: nfs_proc_readdir
+    type diropargs_t : record {
+        dirfh: string;  ##< The file handle of the directory.
+        fname: string;  ##< The name of the file we are interested in.
+    };
 
-	## NFS *read* reply. If the lookup fails, *attr* may be set. If the
-	## lookup succeeds, *attr* may be set and all other fields are set.
-	type read_reply_t: record {
-		attr: fattr_t &optional;	##< Attributes.
-		size: count &optional;	##< Number of bytes read.
-		eof: bool &optional;	##< Sid the read end at EOF.
-		data: string &optional;	##< The actual data; not yet implemented.
-	};
+    ## NFS *rename* arguments.
+    ##
+    ## .. bro:see:: nfs_proc_rename
+    type renameopargs_t : record {
+        src_dirfh : string;
+        src_fname : string;
+        dst_dirfh : string;
+        dst_fname : string;
+    };
 
-	## NFS *readline* reply. If the request fails, *attr* may be set. If the
-	## request succeeds, *attr* may be set and all other fields are set.
-	##
-	## .. bro:see:: nfs_proc_readlink
-	type readlink_reply_t: record {
-		attr: fattr_t &optional;	##< Attributes.
-		nfspath: string &optional;	##< Contents of the symlink; in general a pathname as text.
-	};
+    ## NFS *symlink* arguments.
+    ##
+    ## .. bro:see:: nfs_proc_symlink
+    type symlinkargs_t: record {
+        link : diropargs_t;  ##< The location of the link to be created.
+        symlinkdata: symlinkdata_t; ##< The symbolic link to be created.
+    };
 
-	## NFS *write* arguments.
-	##
-	## .. bro:see:: nfs_proc_write
-	type writeargs_t: record {
-		fh: string;	##< File handle to write to.
-		offset: count;	##< Offset in file.
-		size: count;	##< Number of bytes to write.
-		stable: stable_how_t;	##< How and when data is commited.
-		data: string &optional;	##< The actual data; not implemented yet.
-	};
+    ## NFS *link* arguments.
+    ##
+    ## .. bro:see:: nfs_proc_link
+    type linkargs_t: record {
+        fh : string; ##< The file handle for the existing file system object.
+        link : diropargs_t;  ##< The location of the link to be created.
+    };
 
-	## NFS *wcc* attributes.
-	##
-	## .. bro:see:: NFS3::write_reply_t
-	type wcc_attr_t: record {
-		size: count;	##< The size.
-		atime: time;	##< Access time.
-		mtime: time;	##< Modification time.
-	};
+    ## NFS *sattr* arguments.
+    ##
+    ## .. bro:see:: nfs_proc_sattr
+    type sattrargs_t: record {
+        fh : string; ##< The file handle for the existing file system object.
+        new_attributes: sattr_t; ##< The new attributes for the file.
+    };
 
-	## NFS *write* reply. If the request fails, *pre|post* attr may be set.
-	## If the request succeeds, *pre|post* attr may be set and all other
-	## fields are set.
-	##
-	## .. bro:see:: nfs_proc_write
-	type write_reply_t: record {
-		preattr: wcc_attr_t &optional;	##< Pre operation attributes.
-		postattr: fattr_t &optional;	##< Post operation attributes.
-		size: count &optional;	##< Size.
-		commited: stable_how_t &optional;	##< TODO.
-		verf: count &optional;	##< Write verifier cookie.
-	};
+    ## NFS lookup reply. If the lookup failed, *dir_attr* may be set. If the
+    ## lookup succeeded, *fh* is always set and *obj_attr* and *dir_attr*
+    ## may be set.
+    ##
+    ## .. bro:see:: nfs_proc_lookup
+    type lookup_reply_t: record {
+        fh: string &optional;   ##< File handle of object looked up.
+        obj_attr: fattr_t &optional;    ##< Optional attributes associated w/ file
+        dir_attr: fattr_t &optional;    ##< Optional attributes associated w/ dir.
+    };
 
-	## NFS reply for *create*, *mkdir*, and *symlink*. If the proc
-	## failed, *dir_\*_attr* may be set. If the proc succeeded, *fh* and the
-	## *attr*'s may be set. Note: no guarantee that *fh* is set after
-	## success.
-	##
-	## .. bro:see:: nfs_proc_create nfs_proc_mkdir
-	type newobj_reply_t: record {
-		fh: string &optional;	##< File handle of object created.
-		obj_attr: fattr_t &optional;	##< Optional attributes associated w/ new object.
-		dir_pre_attr: wcc_attr_t &optional;	##< Optional attributes associated w/ dir.
-		dir_post_attr: fattr_t &optional;	##< Optional attributes associated w/ dir.
-	};
+    ## NFS *read* arguments.
+    ##
+    ## .. bro:see:: nfs_proc_read
+    type readargs_t: record {
+        fh: string; ##< File handle to read from.
+        offset: count;  ##< Offset in file.
+        size: count;    ##< Number of bytes to read.
+    };
 
-	## NFS reply for *remove*, *rmdir*. Corresponds to *wcc_data* in the spec.
-	##
-	## .. bro:see:: nfs_proc_remove nfs_proc_rmdir
-	type delobj_reply_t: record {
-		dir_pre_attr: wcc_attr_t &optional;	##< Optional attributes associated w/ dir.
-		dir_post_attr: fattr_t &optional;	##< Optional attributes associated w/ dir.
-	};
+    ## NFS *read* reply. If the lookup fails, *attr* may be set. If the
+    ## lookup succeeds, *attr* may be set and all other fields are set.
+    type read_reply_t: record {
+        attr: fattr_t &optional;    ##< Attributes.
+        size: count &optional;  ##< Number of bytes read.
+        eof: bool &optional;    ##< Sid the read end at EOF.
+        data: string &optional; ##< The actual data; not yet implemented.
+    };
 
-	## NFS *readdir* arguments. Used for both *readdir* and *readdirplus*.
-	##
-	## .. bro:see:: nfs_proc_readdir
-	type readdirargs_t: record {
-		isplus: bool;	##< Is this a readdirplus request?
-		dirfh: string;	##< The directory filehandle.
-		cookie: count;	##< Cookie / pos in dir; 0 for first call.
-		cookieverf: count;	##< The cookie verifier.
-		dircount: count;	##< "count" field for readdir; maxcount otherwise (in bytes).
-		maxcount: count &optional;	##< Only used for readdirplus. in bytes.
-	};
+    ## NFS *readline* reply. If the request fails, *attr* may be set. If the
+    ## request succeeds, *attr* may be set and all other fields are set.
+    ##
+    ## .. bro:see:: nfs_proc_readlink
+    type readlink_reply_t: record {
+        attr: fattr_t &optional;    ##< Attributes.
+        nfspath: string &optional;  ##< Contents of the symlink; in general a pathname as text.
+    };
 
-	## NFS *direntry*.  *fh* and *attr* are used for *readdirplus*. However,
-	## even for *readdirplus* they may not be filled out.
-	##
-	## .. bro:see:: NFS3::direntry_vec_t NFS3::readdir_reply_t
-	type direntry_t: record {
-		fileid: count;	##< E.g., inode number.
-		fname:  string;	##< Filename.
-		cookie: count;	##< Cookie value.
-		attr: fattr_t &optional;	##< *readdirplus*: the *fh* attributes for the entry.
-		fh: string &optional;	##< *readdirplus*: the *fh* for the entry
-	};
+    ## NFS *write* arguments.
+    ##
+    ## .. bro:see:: nfs_proc_write
+    type writeargs_t: record {
+        fh: string; ##< File handle to write to.
+        offset: count;  ##< Offset in file.
+        size: count;    ##< Number of bytes to write.
+        stable: stable_how_t;   ##< How and when data is commited.
+        data: string &optional; ##< The actual data; not implemented yet.
+    };
 
-	## Vector of NFS *direntry*.
-	##
-	## .. bro:see:: NFS3::readdir_reply_t
-	type direntry_vec_t: vector of direntry_t;
+    ## NFS *wcc* attributes.
+    ##
+    ## .. bro:see:: NFS3::write_reply_t
+    type wcc_attr_t: record {
+        size: count;    ##< The size.
+        atime: time;    ##< Access time.
+        mtime: time;    ##< Modification time.
+    };
 
-	## NFS *readdir* reply. Used for *readdir* and *readdirplus*. If an is
-	## returned, *dir_attr* might be set. On success, *dir_attr* may be set,
-	## all others must be set.
-	type readdir_reply_t: record {
-		isplus: bool;	##< True if the reply for a *readdirplus* request.
-		dir_attr: fattr_t &optional;	##< Directory attributes.
-		cookieverf: count &optional;	##< TODO.
-		entries: direntry_vec_t &optional;	##< Returned directory entries.
-		eof: bool;	##< If true, no more entries in directory.
-	};
+    ## NFS *link* reply.
+    ##
+    ## .. bro:see:: nfs_proc_link
+    type link_reply_t: record {
+        post_attr: fattr_t &optional; ##< Optional post-operation attributes of the file system object        identified by file
+        preattr: wcc_attr_t &optional;  ##< Optional attributes associated w/ file.
+        postattr: fattr_t &optional;    ##< Optional attributes associated w/ file.
+    };
 
-	## NFS *fsstat*.
-	type fsstat_t: record {
-		attrs: fattr_t &optional;	##< Attributes.
-		tbytes: double;	##< TODO.
-		fbytes: double;	##< TODO.
-		abytes: double;	##< TODO.
-		tfiles: double;	##< TODO.
-		ffiles: double;	##< TODO.
-		afiles: double;	##< TODO.
-		invarsec: interval;	##< TODO.
-	};
+    ## NFS *sattr* reply. If the request fails, *pre|post* attr may be set.
+    ## If the request succeeds, *pre|post* attr are set.
+    ##
+    type sattr_reply_t: record {
+        dir_pre_attr: wcc_attr_t &optional; ##< Optional attributes associated w/ dir.
+        dir_post_attr: fattr_t &optional;   ##< Optional attributes associated w/ dir.
+    };
+
+    ## NFS *write* reply. If the request fails, *pre|post* attr may be set.
+    ## If the request succeeds, *pre|post* attr may be set and all other
+    ## fields are set.
+    ##
+    ## .. bro:see:: nfs_proc_write
+    type write_reply_t: record {
+        preattr: wcc_attr_t &optional;  ##< Pre operation attributes.
+        postattr: fattr_t &optional;    ##< Post operation attributes.
+        size: count &optional;  ##< Size.
+        commited: stable_how_t &optional;   ##< TODO.
+        verf: count &optional;  ##< Write verifier cookie.
+    };
+
+    ## NFS reply for *create*, *mkdir*, and *symlink*. If the proc
+    ## failed, *dir_\*_attr* may be set. If the proc succeeded, *fh* and the
+    ## *attr*'s may be set. Note: no guarantee that *fh* is set after
+    ## success.
+    ##
+    ## .. bro:see:: nfs_proc_create nfs_proc_mkdir
+    type newobj_reply_t: record {
+        fh: string &optional;   ##< File handle of object created.
+        obj_attr: fattr_t &optional;    ##< Optional attributes associated w/ new object.
+        dir_pre_attr: wcc_attr_t &optional; ##< Optional attributes associated w/ dir.
+        dir_post_attr: fattr_t &optional;   ##< Optional attributes associated w/ dir.
+  };
+
+    ## NFS reply for *remove*, *rmdir*. Corresponds to *wcc_data* in the spec.
+    ##
+    ## .. bro:see:: nfs_proc_remove nfs_proc_rmdir
+    type delobj_reply_t: record {
+        dir_pre_attr: wcc_attr_t &optional; ##< Optional attributes associated w/ dir.
+        dir_post_attr: fattr_t &optional;   ##< Optional attributes associated w/ dir.
+    };
+
+    ## NFS reply for *rename*. Corresponds to *wcc_data* in the spec.
+    ##
+    ## .. bro:see:: nfs_proc_rename
+    type renameobj_reply_t: record {
+        src_dir_pre_attr: wcc_attr_t;
+        src_dir_post_attr: fattr_t;
+        dst_dir_pre_attr: wcc_attr_t;
+        dst_dir_post_attr: fattr_t;
+    };
+
+    ## NFS *readdir* arguments. Used for both *readdir* and *readdirplus*.
+    ##
+    ## .. bro:see:: nfs_proc_readdir
+    type readdirargs_t: record {
+        isplus: bool;   ##< Is this a readdirplus request?
+        dirfh: string;  ##< The directory filehandle.
+        cookie: count;  ##< Cookie / pos in dir; 0 for first call.
+        cookieverf: count;  ##< The cookie verifier.
+        dircount: count;    ##< "count" field for readdir; maxcount otherwise (in bytes).
+        maxcount: count &optional;  ##< Only used for readdirplus. in bytes.
+    };
+
+    ## NFS *direntry*.  *fh* and *attr* are used for *readdirplus*. However,
+    ## even for *readdirplus* they may not be filled out.
+    ##
+    ## .. bro:see:: NFS3::direntry_vec_t NFS3::readdir_reply_t
+    type direntry_t: record {
+        fileid: count;  ##< E.g., inode number.
+        fname:  string; ##< Filename.
+        cookie: count;  ##< Cookie value.
+        attr: fattr_t &optional;    ##< *readdirplus*: the *fh* attributes for the entry.
+        fh: string &optional;   ##< *readdirplus*: the *fh* for the entry
+    };
+
+    ## Vector of NFS *direntry*.
+    ##
+    ## .. bro:see:: NFS3::readdir_reply_t
+    type direntry_vec_t: vector of direntry_t;
+
+    ## NFS *readdir* reply. Used for *readdir* and *readdirplus*. If an is
+    ## returned, *dir_attr* might be set. On success, *dir_attr* may be set,
+    ## all others must be set.
+    type readdir_reply_t: record {
+        isplus: bool;   ##< True if the reply for a *readdirplus* request.
+        dir_attr: fattr_t &optional;    ##< Directory attributes.
+        cookieverf: count &optional;    ##< TODO.
+        entries: direntry_vec_t &optional;  ##< Returned directory entries.
+        eof: bool;  ##< If true, no more entries in directory.
+    };
+
+    ## NFS *fsstat*.
+    type fsstat_t: record {
+        attrs: fattr_t &optional;   ##< Attributes.
+        tbytes: double; ##< TODO.
+        fbytes: double; ##< TODO.
+        abytes: double; ##< TODO.
+        tfiles: double; ##< TODO.
+        ffiles: double; ##< TODO.
+        afiles: double; ##< TODO.
+        invarsec: interval; ##< TODO.
+    };
+} # end export
+
+module MOUNT3;
+export {
+
+    ## Record summarizing the general results and status of MOUNT3
+    ## request/reply pairs.
+    ##
+    ## Note that when *rpc_stat* or *mount_stat* indicates not successful,
+    ## the reply record passed to the corresponding event will be empty and
+    ## contain uninitialized fields, so don't use it. Also note that time
+    # and duration values might not be fully accurate. For TCP, we record
+    # times when the corresponding chunk of data is delivered to the
+    # analyzer. Depending on the reassembler, this might be well after the
+    # first packet of the request was received.
+    #
+    # .. bro:see:: mount_proc_mnt mount_proc_dump mount_proc_umnt
+    #    mount_proc_umntall mount_proc_export mount_proc_not_implemented
+    type info_t: record {
+        ## The RPC status.
+        rpc_stat: rpc_status;
+        ## The MOUNT status.
+        mnt_stat: status_t;
+        ## The start time of the request.
+        req_start: time;
+        ## The duration of the request.
+        req_dur: interval;
+        ## The length in bytes of the request.
+        req_len: count;
+        ## The start time of the reply.
+        rep_start: time;
+        ## The duration of the reply.
+        rep_dur: interval;
+        ## The length in bytes of the reply.
+        rep_len: count;
+        ## The user id of the reply.
+        rpc_uid: count;
+        ## The group id of the reply.
+        rpc_gid: count;
+        ## The stamp of the reply.
+        rpc_stamp: count;
+        ## The machine name of the reply.
+        rpc_machine_name: string;
+        ## The auxiliary ids of the reply.
+        rpc_auxgids: index_vec;
+    };
+
+    ## MOUNT *mnt* arguments.
+    ##
+    ## .. bro:see:: mount_proc_mnt
+    type dirmntargs_t : record {
+        dirname: string;    ##< Name of directory to mount
+    };
+
+    ## MOUNT lookup reply. If the mount failed, *dir_attr* may be set. If the
+    ## mount succeeded, *fh* is always set.
+    ##
+    ## .. bro:see:: mount_proc_mnt
+    type mnt_reply_t: record {
+        dirfh: string &optional;    ##< Dir handle
+        auth_flavors: vector of auth_flavor_t &optional;    ##< Returned authentication flavors
+    };
+
 } # end export
 
 module Threading;
@@ -2453,7 +2607,7 @@ export {
 		negotiate_lm_key       : bool;
 		## If set, requests connectionless authentication
 		negotiate_datagram     : bool;
-		## If set, requests session key negotiation for message 
+		## If set, requests session key negotiation for message
 		## confidentiality
 		negotiate_seal         : bool;
 		## If set, requests session key negotiation for message
@@ -2641,7 +2795,7 @@ export {
 		## The server supports compressed data transfer. Requires bulk_transfer.
 		## Note: No known implementations support this
 		compressed_data	   : bool;
-		## The server supports extended security exchanges	
+		## The server supports extended security exchanges
 		extended_security  : bool;
 	};
 
@@ -2734,7 +2888,7 @@ export {
 	};
 
 	type SMB1::NegotiateResponse: record {
-		## If the server does not understand any of the dialect strings, or if 
+		## If the server does not understand any of the dialect strings, or if
 		## PC NETWORK PROGRAM 1.0 is the chosen dialect.
 		core	: SMB1::NegotiateResponseCore 	&optional;
 		## If the chosen dialect is greater than core up to and including
@@ -2785,7 +2939,7 @@ export {
 		## If challenge/response auth is not being used, this is the password.
 		## Otherwise, it's the response to the server's challenge.
 		## Note: Only set for pre NT LM 0.12
-		account_password	  : string &optional;		
+		account_password	  : string &optional;
 		## Client's primary domain, if known
 		## Note: not set for NT LM 0.12 with extended security
 		primary_domain		  : string &optional;
@@ -2803,7 +2957,7 @@ export {
 		## Note: only set for NT LM 0.12
 		capabilities		  : SMB1::SessionSetupAndXCapabilities &optional;
 	};
-	
+
 	type SMB1::SessionSetupAndXResponse: record {
 		## Count of parameter words (should be 3 for pre NT LM 0.12 and 4 for NT LM 0.12)
 		word_count	: count;
@@ -3543,7 +3697,7 @@ type bt_tracker_headers: table[string] of string;
 ## for a range of modbus coils.
 type ModbusCoils: vector of bool;
 
-## A vector of count values that represent 16bit modbus 
+## A vector of count values that represent 16bit modbus
 ## register values.
 type ModbusRegisters: vector of count;
 

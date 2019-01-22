@@ -73,5 +73,5 @@ event mysql_server_version%(c: connection, ver: string%);
 ## username: The username supplied by the client
 ##
 ## .. bro:see:: mysql_command_request mysql_error mysql_ok mysql_server_version
-event mysql_handshake%(c: connection, username: string%);
+event mysql_handshake%(c: connection, username: string, schema: string%);
 

@@ -105,6 +105,29 @@ if (LIBGEOIP_FOUND)
     list(APPEND OPTLIBS ${LibGeoIP_LIBRARY})
 endif ()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    EXECUTE_PROCESS(
+        COMMAND cat /etc/os-release
+        COMMAND grep ^ID=
+        COMMAND awk -F= "{ print $2 }"
+        COMMAND tr "\n" " "
+        COMMAND sed "s/ //"
+        COMMAND sed "s/^\"//"
+        COMMAND sed "s/\"$//"
+        OUTPUT_VARIABLE SYSTEMD_ID
+        RESULT_VARIABLE SYSTEMD_ID_RESULT
+    )
+    if(${SYSTEMD_ID} STREQUAL "alpine")
+        find_package(FTS)
+        if (FTS_FOUND)
+            include_directories(BEFORE ${fts_INCLUDE_DIR})
+            list(APPEND OPTLIBS ${fts_LIBRARY})
+        else ()
+            message(FATAL_ERROR "missing fts and fts-dev for alpine linux.")
+        endif ()
+    endif ()
+endif ()
+
 set(HAVE_PERFTOOLS false)
 set(USE_PERFTOOLS_DEBUG false)
 set(USE_PERFTOOLS_TCMALLOC false)
@@ -138,6 +161,7 @@ if (ENABLE_PERFTOOLS_DEBUG OR ENABLE_PERFTOOLS)
     # perftools weren't found
 endif ()
 
+set(FUZZY_LIBRARY fuzzy)
 set(brodeps
     ${BinPAC_LIBRARY}
     ${PCAP_LIBRARY}
@@ -145,6 +169,7 @@ set(brodeps
     ${BIND_LIBRARY}
     ${ZLIB_LIBRARY}
     ${JEMALLOC_LIBRARIES}
+    ${FUZZY_LIBRARY} 
     ${OPTLIBS}
 )
 

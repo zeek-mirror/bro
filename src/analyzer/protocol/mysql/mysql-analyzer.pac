@@ -27,11 +27,13 @@ refine flow MySQL_Flow += {
 			if ( ${msg.version} == 10 )
 				BifEvent::generate_mysql_handshake(connection()->bro_analyzer(),
 									    		   connection()->bro_analyzer()->Conn(),
-													bytestring_to_val(${msg.v10_response.username}));
+													bytestring_to_val(${msg.v10_response.username}),
+													bytestring_to_val(${msg.v10_response.database}));
 			if ( ${msg.version} == 9 )
 				BifEvent::generate_mysql_handshake(connection()->bro_analyzer(),
 									    		   connection()->bro_analyzer()->Conn(),
-								    	    	   bytestring_to_val(${msg.v9_response.username}));
+													bytestring_to_val(${msg.v9_response.username}),
+													bytestring_to_val(${msg.v9_response.database}));
 			}
 		return true;
 		%}

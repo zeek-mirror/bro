@@ -27,6 +27,7 @@ namespace { // local namespace
 
 RPC_CallInfo::RPC_CallInfo(uint32 arg_xid, const u_char*& buf, int& n, double arg_start_time, double arg_last_time, int arg_rpc_len)
 	{
+	v = nullptr;
 	xid = arg_xid;
 
 	start_time = arg_start_time;
@@ -40,14 +41,46 @@ RPC_CallInfo::RPC_CallInfo(uint32 arg_xid, const u_char*& buf, int& n, double ar
 	prog = extract_XDR_uint32(buf, n);
 	vers = extract_XDR_uint32(buf, n);
 	proc = extract_XDR_uint32(buf, n);
-	cred_flavor = skip_XDR_opaque_auth(buf, n);
+	cred_flavor = extract_XDR_uint32(buf, n);
+	int cred_opaque_n, machinename_n;
+	const u_char* cred_opaque = extract_XDR_opaque(buf, n, cred_opaque_n);
+
+	if ( ! cred_opaque )
+		{
+		buf = nullptr;
+		return;
+		}
+
+	stamp = extract_XDR_uint32(cred_opaque, cred_opaque_n);
+
+	const u_char* tmp = extract_XDR_opaque(cred_opaque, cred_opaque_n, machinename_n);
+
+	if ( ! tmp )
+		{
+		buf = nullptr;
+		return;
+		}
+
+	machinename = std::string(reinterpret_cast<const char*>(tmp), machinename_n);
+
+	uid = extract_XDR_uint32(cred_opaque, cred_opaque_n);
+	gid = extract_XDR_uint32(cred_opaque, cred_opaque_n);
+	size_t number_of_gids = extract_XDR_uint32(cred_opaque, cred_opaque_n);
+
+	if ( number_of_gids > 64 )
+		{
+		buf = nullptr;
+		return;
+		}
+
+	for ( auto i = 0u; i < number_of_gids; ++i )
+		auxgids.push_back(extract_XDR_uint32(cred_opaque, cred_opaque_n));
+
 	verf_flavor = skip_XDR_opaque_auth(buf, n);
 
 	header_len = call_n - n;
 
 	valid_call = false;
-
-	v = 0;
 	}
 
 RPC_CallInfo::~RPC_CallInfo()
@@ -253,23 +286,25 @@ int RPC_Interpreter::DeliverRPC(const u_char* buf, int n, int rpclen,
 	else
 		Weird("bad_RPC");
 
-	if ( n > 0 )
-		{
-		// If it's just padded with zeroes, don't complain.
-		for ( ; n > 0; --n, ++buf )
-			if ( *buf != 0 )
-				break;
+    if ( buf )
+        {
+    	if ( n > 0 )
+	    	{
+		    // If it's just padded with zeroes, don't complain.
+    		for ( ; n > 0; --n, ++buf )
+	    		if ( *buf != 0 )
+		    		break;
 
-		if ( n > 0 )
-			Weird("excess_RPC");
-		}
+    		if ( n > 0 )
+	    		Weird("excess_RPC");
+    		}
 
-	else if ( n < 0 )
-		{
-		reporter->AnalyzerError(analyzer, "RPC underflow");
-		return 0;
-		}
-
+	    else if ( n < 0 )
+		    {
+    		reporter->AnalyzerError(analyzer, "RPC underflow");
+	    	return 0;
+		    }
+        }
 	return 1;
 	}
 

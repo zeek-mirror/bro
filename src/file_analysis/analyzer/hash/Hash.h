@@ -9,7 +9,7 @@
 #include "OpaqueVal.h"
 #include "File.h"
 #include "Analyzer.h"
-
+#include "Fuzzy.h"
 #include "events.bif.h"
 
 namespace file_analysis {
@@ -155,6 +155,38 @@ protected:
 		{}
 };
 
+    /**
+ * An analyzer to produce a SHA256 hash of file contents.
+ */
+class FUZZY : public Hash {
+public:
+
+	/**
+	 * Create a new instance of the SHA256 hashing file analyzer.
+	 * @param args the \c AnalyzerArgs value which represents the analyzer.
+	 * @param file the file to which the analyzer will be attached.
+	 * @return the new MD5 analyzer instance or a null pointer if there's no
+	 *         handler for the "file_hash" event.
+	 */
+	static file_analysis::Analyzer* Instantiate(RecordVal* args, File* file)
+		{ return file_hash ? new FUZZY(args, file) : 0; }
+
+protected:
+
+	/**
+	 * Constructor.
+	 * @param args the \c AnalyzerArgs value which represents the analyzer.
+	 * @param file the file to which the analyzer will be attached.
+	 */
+    FUZZY(RecordVal* args, File* file)
+        : Hash(args, file, new FUZZYVal(), "fuzzy")
+    {}
+};
+
 } // namespace file_analysis
 
 #endif
+
+
+
+

@@ -305,6 +305,7 @@ set(bro_SRCS
     NetVar.cc
     Obj.cc
     OpaqueVal.cc
+    Fuzzy.cc
     OSFinger.cc
     PacketFilter.cc
     PersistenceSerializer.cc

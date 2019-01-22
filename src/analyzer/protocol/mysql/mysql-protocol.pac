@@ -224,12 +224,20 @@ type Handshake_Response_Packet = case $context.connection.get_version() of {
 } &byteorder=bigendian;
 
 type Handshake_Response_Packet_v10 = record {
-	cap_flags    : uint32;
+	cap_flags    : uint16;
+	ex_cap_flags : uint16;
 	max_pkt_size : uint32;
 	char_set     : uint8;
 	pad          : padding[23];
 	username     : NUL_String;
-	password     : bytestring &restofdata;
+	pad          : padding[1];
+	passwdlen    : uint8;
+	password     : bytestring &length=passwdlen;
+	have_db		 : case ( cap_flags & 0x100) of {
+		0x100	-> database : NUL_String;
+		0x0	    -> none	    : empty;
+	};
+	cliauthplugin:bytestring &restofdata;
 };
 
 type Handshake_Response_Packet_v9 = record {
