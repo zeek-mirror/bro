@@ -9,7 +9,7 @@
 	url = git://git.bro.org/broccoli
 [submodule "aux/broctl"]
 	path = aux/broctl
-	url = git://git.bro.org/broctl
+	url = git://www.github.com/HeliosData/broctl
 [submodule "aux/btest"]
 	path = aux/btest
 	url = git://git.bro.org/btest
