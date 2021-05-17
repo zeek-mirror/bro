@@ -35,9 +35,8 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
     --prefix=PREFIX        installation directory [/usr/local/zeek]
     --scriptdir=PATH       root installation directory for Zeek scripts
                            [PREFIX/share/zeek]
-    --localstatedir=PATH   when using ZeekControl, path to store log files
-                           and run-time data (within log/ and spool/ subdirs)
-                           [PREFIX]
+    --localstatedir=PATH   path to store local dynamic state
+                           [PREFIX/var/lib/zeek]
     --spooldir=PATH        when using ZeekControl, path to store run-time data
                            [PREFIX/spool]
     --logdir=PATH          when using ZeekControl, path to store log file

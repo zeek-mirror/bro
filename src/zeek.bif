@@ -20,6 +20,7 @@
 #include "zeek/Reporter.h"
 #include "zeek/IPAddr.h"
 #include "zeek/util.h"
+#include "zeek/util-config.h"
 #include "zeek/file_analysis/Manager.h"
 #include "zeek/iosource/Manager.h"
 #include "zeek/iosource/Packet.h"
@@ -1733,6 +1734,12 @@ function zeek_version%(%): string
 	%{
 	return zeek::make_intrusive<zeek::StringVal>(zeek::zeek_version());
 	%}
+
+## Returns: the Zeek state folder's path.
+function zeek_local_state_dir%(%): string
+	%{
+        return zeek::make_intrusive<zeek::StringVal>(ZEEK_LOCAL_STATE_DIR);
+        %}
 
 ## Converts a record type name to a vector of strings, where each element is
 ## the name of a record field. Nested records are flattened.

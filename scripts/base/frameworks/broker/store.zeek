@@ -33,7 +33,7 @@ export {
 
 	## The directory used for storing persistent database files when using Broker
         ## store backed Zeek tables.
-	const table_store_db_directory = "." &redef;
+	const table_store_db_directory = zeek_local_state_dir() &redef;
 
 	## Whether a data store query could be completed or not.
 	type QueryStatus: enum {

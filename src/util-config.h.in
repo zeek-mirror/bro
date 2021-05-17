@@ -1,3 +1,9 @@
 #define ZEEK_SCRIPT_INSTALL_PATH "@ZEEK_SCRIPT_INSTALL_PATH@"
 #define BRO_PLUGIN_INSTALL_PATH "@BRO_PLUGIN_INSTALL_PATH@"
 #define DEFAULT_ZEEKPATH "@DEFAULT_ZEEKPATH@"
+
+// Zeek installation root folder
+#define ZEEK_ROOT_DIR "@ZEEK_ROOT_DIR@"
+
+// Toplevel directory for dynamic Zeek state
+#define ZEEK_LOCAL_STATE_DIR "@ZEEK_LOCAL_STATE_DIR@"

@@ -48,6 +48,13 @@ if (NOT ZEEK_MAN_INSTALL_PATH)
     set(ZEEK_MAN_INSTALL_PATH ${ZEEK_ROOT_DIR}/share/man)
 endif ()
 
+if (NOT ZEEK_LOCAL_STATE_DIR)
+    # set the default Zeek state storage path (userdid not specify one)
+    set(ZEEK_LOCAL_STATE_DIR ${ZEEK_ROOT_DIR}/var/lib/zeek)
+endif ()
+
+install(DIRECTORY DESTINATION ${ZEEK_LOCAL_STATE_DIR})
+
 # sanitize the Zeek script install directory into an absolute path
 # (CMake is confused by ~ as a representation of home directory)
 get_filename_component(ZEEK_SCRIPT_INSTALL_PATH ${ZEEK_SCRIPT_INSTALL_PATH}
@@ -654,6 +661,7 @@ message(
     "\nInstall prefix:    ${CMAKE_INSTALL_PREFIX}"
     "\nPlugin dir:        ${BRO_PLUGIN_INSTALL_PATH}"
     "\nPython module dir: ${PY_MOD_INSTALL_DIR}"
+    "\nState dir:         ${ZEEK_LOCAL_STATE_DIR}"
     "\nZeek Script Path:  ${ZEEK_SCRIPT_INSTALL_PATH}"
     "\nDebug mode:        ${ENABLE_DEBUG}"
     "\nUnit tests:        ${ENABLE_ZEEK_UNIT_TESTS}"
