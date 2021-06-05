@@ -626,7 +626,6 @@ ConversionResult ConvertUTF8toUTF16 (
         }
     }
     *sourceStart = source;
-    *targetStart = target;
     return result;
 }
 
