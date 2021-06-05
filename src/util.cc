@@ -2402,6 +2402,30 @@ TEST_CASE("util json_escape_utf8")
 	// Invalid 4 Octet Sequence (too short)
 	CHECK(json_escape_utf8("\xf4\x80\x8c") == "\\xf4\\x80\\x8c");
 	CHECK(json_escape_utf8("\xf0") == "\\xf0");
+
+	// Private Use Area (E000-F8FF) are always invalid
+	CHECK(json_escape_utf8("\xee\x8b\xa0") == "\\xee\\x8b\\xa0");
+	}
+
+static bool check_ok_utf8(const unsigned char* start, const unsigned char* end)
+	{
+	// There's certain blocks of UTF-8 that we don't want, but the easiest way to find
+	// them is to convert to UTF-32 and then compare. This is annoying, but it also calls
+	// isLegalUTF8Sequence along the way so go with it.
+	std::array<UTF32, 2> output;
+	UTF32* output2 = output.data();
+	auto result = ConvertUTF8toUTF32(&start, end, &output2, output2+1, strictConversion);
+	if ( result != conversionOK )
+		return false;
+
+	if ( output[0] >= 0xE000 && output[0] <= 0xF8FF )
+		// Private Use Area
+		return false;
+	else if ( output[0] >= 0xFFF0 && output[0] <= 0xFFFF )
+		// Specials Characters
+		return false;
+
+	return true;
 	}
 
 string json_escape_utf8(const string& val)
@@ -2440,7 +2464,8 @@ string json_escape_utf8(const string& val)
 
 		// If it says that it's a single character or it's not an valid string UTF8 sequence, insert
 		// the one escaped byte into the string, step forward one, and go to the next character.
-		if ( char_size == 0 || idx+char_size > val_size || isLegalUTF8Sequence(val_data+idx, val_data+idx+char_size) == 0 )
+		if ( char_size == 0 || idx+char_size > val_size ||
+		     check_ok_utf8(val_data+idx, val_data+idx+char_size) == 0 )
 			{
 			result.append(json_escape_byte(ch));
 			++idx;
