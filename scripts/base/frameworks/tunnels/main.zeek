@@ -99,7 +99,6 @@ event zeek_init() &priority=5
 	{
 	Log::create_stream(Tunnel::LOG, [$columns=Info, $path="tunnel", $policy=log_policy]);
 
-	Analyzer::register_for_ports(Analyzer::ANALYZER_AYIYA, ayiya_ports);
 	Analyzer::register_for_ports(Analyzer::ANALYZER_TEREDO, teredo_ports);
 	Analyzer::register_for_ports(Analyzer::ANALYZER_GTPV1, gtpv1_ports);
 	Analyzer::register_for_ports(Analyzer::ANALYZER_VXLAN, vxlan_ports);

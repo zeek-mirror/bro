@@ -8,6 +8,8 @@
 #include "zeek/IP.h"
 #include "zeek/TunnelEncapsulation.h"
 #include "zeek/packet_analysis/protocol/ip/IP.h"
+#include "zeek/Conn.h"
+#include "zeek/Event.h"
 
 namespace zeek::packet_analysis::IPTunnel {
 
@@ -23,7 +25,7 @@ bool IPTunnelAnalyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pa
 	{
 	if ( ! packet->ip_hdr )
 		{
-		reporter->InternalError("IPTunnelAnalyzer: ip_hdr not found in packet keystore");
+		reporter->InternalError("IPTunnelAnalyzer: null ip_hdr in packet");
 		return false;
 		}
 
@@ -62,22 +64,43 @@ bool IPTunnelAnalyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pa
 			return false;
 		}
 
+	if ( encapsulation_protocol && packet->session )
+		{
+		const auto& tval = packet->tunnel_tag ? packet->tunnel_tag.AsVal() : GetAnalyzerTag().AsVal();
+		const auto& n = zeek::packet_mgr->GetComponentName(tval);
+		event_mgr.Enqueue(encapsulation_protocol, packet->session->GetVal(),
+		                  make_intrusive<StringVal>(n));
+		}
+
 	// Look up to see if we've already seen this IP tunnel, identified
 	// by the pair of IP addresses, so that we can always associate the
 	// same UID with it.
-	IPPair tunnel_idx;
-	if ( packet->ip_hdr->SrcAddr() < packet->ip_hdr->DstAddr() )
-		tunnel_idx = IPPair(packet->ip_hdr->SrcAddr(), packet->ip_hdr->DstAddr());
+	TunnelIdx tunnel_idx;
+	auto* c = static_cast<Connection*>(packet->session);
+	if ( c )
+		{
+		tunnel_idx = std::make_tuple(c->OrigAddr(), c->OrigPort(), c->RespAddr(), c->RespPort());
+		}
 	else
-		tunnel_idx = IPPair(packet->ip_hdr->DstAddr(), packet->ip_hdr->SrcAddr());
+		{
+		if ( packet->ip_hdr->SrcAddr() < packet->ip_hdr->DstAddr() )
+			tunnel_idx = std::make_tuple(packet->ip_hdr->SrcAddr(), 0, packet->ip_hdr->DstAddr(), 0);
+		else
+			tunnel_idx = std::make_tuple(packet->ip_hdr->DstAddr(), 0, packet->ip_hdr->SrcAddr(), 0);
+		}
 
 	IPTunnelMap::iterator tunnel_it = ip_tunnels.find(tunnel_idx);
 
 	if ( tunnel_it == ip_tunnels.end() )
 		{
-		EncapsulatingConn ec(packet->ip_hdr->SrcAddr(), packet->ip_hdr->DstAddr(),
-		                     tunnel_type);
-		ip_tunnels[tunnel_idx] = TunnelActivity(ec, run_state::network_time);
+		EncapsulatingConn ec;
+		if ( c )
+			ec = EncapsulatingConn{c, tunnel_type};
+		else
+			ec = EncapsulatingConn{packet->ip_hdr->SrcAddr(), packet->ip_hdr->DstAddr(), tunnel_type};
+
+		auto res = ip_tunnels.insert_or_assign(tunnel_idx, TunnelActivity(ec, run_state::network_time));
+		tunnel_it = res.first;
 		zeek::detail::timer_mgr->Add(new detail::IPTunnelTimer(run_state::network_time, tunnel_idx, this));
 		}
 	else
@@ -85,10 +108,10 @@ bool IPTunnelAnalyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pa
 
 	if ( gre_version == 0 )
 		ProcessEncapsulatedPacket(run_state::processing_start_time, packet, len, len, data, gre_link_type,
-		                          packet->encap, ip_tunnels[tunnel_idx].first);
+		                          packet->encap, tunnel_it->second.first);
 	else
 		ProcessEncapsulatedPacket(run_state::processing_start_time, packet, inner, packet->encap,
-		                          ip_tunnels[tunnel_idx].first);
+		                          tunnel_it->second.first);
 
 	return true;
 	}
@@ -176,10 +199,10 @@ bool IPTunnelAnalyzer::ProcessEncapsulatedPacket(double t, const Packet* pkt,
 
 namespace detail {
 
-IPTunnelTimer::IPTunnelTimer(double t, IPTunnelAnalyzer::IPPair p, IPTunnelAnalyzer* analyzer)
+IPTunnelTimer::IPTunnelTimer(double t, IPTunnelAnalyzer::TunnelIdx idx, IPTunnelAnalyzer* analyzer)
 	: Timer(t + BifConst::Tunnel::ip_tunnel_timeout,
 	        zeek::detail::TIMER_IP_TUNNEL_INACTIVITY),
-	  tunnel_idx(p), analyzer(analyzer)
+	  tunnel_idx(std::move(idx)), analyzer(analyzer)
 	{
 	}
 

@@ -70,9 +70,9 @@ protected:
 
 	friend class detail::IPTunnelTimer;
 
-	using IPPair = std::pair<IPAddr, IPAddr>;
+	using TunnelIdx = std::tuple<IPAddr, uint32_t, IPAddr, uint32_t>;
 	using TunnelActivity = std::pair<EncapsulatingConn, double>;
-	using IPTunnelMap = std::map<IPPair, TunnelActivity>;
+	using IPTunnelMap = std::map<TunnelIdx, TunnelActivity>;
 	IPTunnelMap ip_tunnels;
 
 };
@@ -81,13 +81,13 @@ namespace detail {
 
 class IPTunnelTimer final : public zeek::detail::Timer {
 public:
-	IPTunnelTimer(double t, IPTunnelAnalyzer::IPPair p, IPTunnelAnalyzer* analyzer);
+	IPTunnelTimer(double t, IPTunnelAnalyzer::TunnelIdx idx, IPTunnelAnalyzer* analyzer);
 	~IPTunnelTimer() override = default;
 
 	void Dispatch(double t, bool is_expire) override;
 
 protected:
-	IPTunnelAnalyzer::IPPair tunnel_idx;
+	IPTunnelAnalyzer::TunnelIdx tunnel_idx;
 	IPTunnelAnalyzer* analyzer;
 };
 

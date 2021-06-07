@@ -18,12 +18,12 @@ Tag& Tag::operator=(const Tag& other)
 	return *this;
 	}
 
-const IntrusivePtr<EnumVal>& Tag::AsVal() const
+const EnumValPtr& Tag::AsVal() const
 	{
 	return zeek::Tag::AsVal(packet_mgr->GetTagType());
 	}
 
-Tag::Tag(IntrusivePtr<EnumVal> val)
+Tag::Tag(EnumValPtr val)
 	: zeek::Tag(std::move(val))
 	{
 	}

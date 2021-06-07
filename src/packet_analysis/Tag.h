@@ -77,7 +77,7 @@ public:
 	 *
 	 * @param etype the script-layer enum type associated with the tag.
 	 */
-	const IntrusivePtr<EnumVal>& AsVal() const;
+	const EnumValPtr& AsVal() const;
 
 	static Tag Error;
 
@@ -104,7 +104,7 @@ protected:
 	 *
 	 * @param val An enum value of script type \c Analyzer::Tag.
 	 */
-	explicit Tag(IntrusivePtr<EnumVal> val);
+	explicit Tag(EnumValPtr val);
 };
 
 }

@@ -18,6 +18,8 @@ typedef struct timeval pkt_timeval;
 #include "zeek/NetVar.h" // For BifEnum::Tunnel
 #include "zeek/TunnelEncapsulation.h"
 #include "zeek/IP.h"
+#include "zeek/session/Session.h"
+#include "zeek/packet_analysis/Tag.h"
 
 namespace zeek {
 
@@ -239,6 +241,9 @@ public:
 	 * analyzer to the IPTunnel analyzer.
 	 */
 	int gre_link_type = DLT_RAW;
+
+	session::Session* session = nullptr;
+	packet_analysis::Tag tunnel_tag;
 
 private:
 	// Renders an MAC address into its ASCII representation.

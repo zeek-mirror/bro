@@ -1,3 +1,5 @@
+@load ./main
+
 @load base/packet-protocols/root
 @load base/packet-protocols/ip
 @load base/packet-protocols/skip
@@ -18,3 +20,5 @@
 @load base/packet-protocols/udp
 @load base/packet-protocols/tcp
 @load base/packet-protocols/icmp
+
+@load base/packet-protocols/ayiya

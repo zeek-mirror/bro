@@ -21,3 +21,5 @@ add_subdirectory(icmp)
 add_subdirectory(gre)
 add_subdirectory(iptunnel)
 add_subdirectory(vntag)
+
+add_subdirectory(ayiya)

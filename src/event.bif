@@ -907,3 +907,12 @@ event Pcap::file_done%(path: string%);
 ##
 ## .. zeek:see:: UnknownProtocol::first_bytes_count
 event unknown_protocol%(analyzer_name: string, protocol: count, first_bytes: string%);
+
+## Generated when a packet analyzer finds an encapsulation in the protocol stack.
+## using that protocol.
+##
+## c: The connection.
+##
+## analyzer: The name of the analyzer confirming this protocol.
+##
+event encapsulation_protocol%(c: connection, aname: string%);
