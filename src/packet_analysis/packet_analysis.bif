@@ -47,3 +47,17 @@ function try_register_packet_analyzer_by_name%(parent: string, identifier: count
 	parent_analyzer->RegisterProtocol(identifier, child_analyzer);
 	return zeek::val_mgr->True();
 	%}
+
+function register_protocol_detection%(parent: PacketAnalyzer::Tag, child: PacketAnalyzer::Tag%): bool
+	%{
+	packet_analysis::AnalyzerPtr parent_analyzer = packet_mgr->GetAnalyzer(parent->AsEnumVal());
+	if ( ! parent_analyzer )
+		return zeek::val_mgr->False();
+
+	packet_analysis::AnalyzerPtr child_analyzer = packet_mgr->GetAnalyzer(child->AsEnumVal());
+	if ( ! child_analyzer )
+		return zeek::val_mgr->False();
+
+	parent_analyzer->RegisterProtocolDetection(child_analyzer);
+	return zeek::val_mgr->True();
+	%}

@@ -1,6 +1,8 @@
 // See the file "COPYING" in the main distribution directory for copyright.
 #pragma once
 
+#include <set>
+
 #include "zeek/packet_analysis/Manager.h"
 #include "zeek/packet_analysis/Tag.h"
 #include "zeek/iosource/Packet.h"
@@ -97,6 +99,28 @@ public:
 	 */
 	void RegisterProtocol(uint32_t identifier, AnalyzerPtr child);
 
+	/**
+	 * Registers an analyzer to use for protocol detection if identifier
+	 * matching fails. This will also be preferred over the default analyzer
+	 * if one exists.
+	 *
+	 * @param child The analyzer that will be called for protocol detection.
+	 */
+	void RegisterProtocolDetection(AnalyzerPtr child)	 { analyzers_to_detect.insert(child); }
+
+	/**
+	 * Detects whether the protocol for an analyzer can be found in the packet
+	 * data. This can be used similarly to how DPD is used in the session
+	 * analysis tree.
+	 *
+	 * @param len The number of bytes passed in. As we move along the chain of
+	 * analyzers, this is the number of bytes we have left of the packet to
+	 * process.
+	 * @param data Pointer to the input to process.
+	 * @param packet Object that maintains the packet's meta data.
+	 */
+	virtual bool DetectProtocol(size_t len, const uint8_t* data, Packet* packet) { return false; }
+
 protected:
 	friend class Manager;
 
@@ -172,6 +196,8 @@ private:
 	 * Flag for whether to report unknown protocols in ForwardPacket.
 	 */
 	bool report_unknown_protocols = true;
+
+	std::set<AnalyzerPtr> analyzers_to_detect;
 
 	void Init(const Tag& tag);
 };
