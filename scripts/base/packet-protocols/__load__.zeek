@@ -22,3 +22,4 @@
 @load base/packet-protocols/icmp
 
 @load base/packet-protocols/ayiya
+@load base/packet-protocols/geneve

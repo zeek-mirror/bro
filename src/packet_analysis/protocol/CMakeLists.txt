@@ -18,8 +18,10 @@ add_subdirectory(ip)
 add_subdirectory(udp)
 add_subdirectory(tcp)
 add_subdirectory(icmp)
-add_subdirectory(gre)
-add_subdirectory(iptunnel)
 add_subdirectory(vntag)
 
+# Tunnel analyzers
+add_subdirectory(iptunnel)
+add_subdirectory(gre)
 add_subdirectory(ayiya)
+add_subdirectory(geneve)
